@@ -39,7 +39,6 @@ jobs:
       - name: Build script
         id: build
         run: |
-          mkdir -p /tmp/artifacts
           VERSION=$(grep ^KERNEL_VERSION build.sh | head -n1| cut -d = -f2)
           REL=$(grep "PKGREL=\d*" build.sh | cut -d = -f2)
           #REL=$( git tag |grep -F $VERSION|sort -r|head -n1|tr -d v)
@@ -48,29 +47,24 @@ jobs:
 
           DOCKER_IMAGE=debian:unstable
           docker pull ${DOCKER_IMAGE}
-          docker run \
-          -t \
-          -v "$(pwd)":/repo -v  /tmp/artifacts:/tmp/artifacts \
-          ${DOCKER_IMAGE} \
-          /bin/bash -c 'cd /repo && ./build.sh'
-
-          cd /tmp/artifacts
-          dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+          docker run -t -v "$(pwd):/repo" ${DOCKER_IMAGE} /bin/bash -c 'cd /repo && ./build.sh'
+          echo Contents of '$(pwd)/packages'
+          ls -l $(pwd)/packages
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v2
         with:
           name: linux-T2-${{ steps.build.outputs.tag }}
-          path: /tmp/artifacts/*
+          path: packages
 
       - name: Release
         if: github.ref == 'refs/heads/Mainline'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            /tmp/artifacts/Packages.gz
-            /tmp/artifacts/sha256
-            /tmp/artifacts/*.deb
+             packages/Packages.gz
+             packages/sha256
+             packages/*.deb
           tag_name: v${{ steps.build.outputs.tag }}
           body_path: ${{ github.workspace }}/.github/workflows/instructions.txt
           draft: false
