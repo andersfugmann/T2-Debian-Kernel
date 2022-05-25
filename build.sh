@@ -23,14 +23,17 @@ fi
 APPLE_BCE_REPOSITORY=https://github.com/kekrby/apple-bce.git
 APPLE_IBRIDGE_REPOSITORY=https://github.com/Redecorating/apple-ib-drv.git
 REPO_PATH=$(pwd)
-WORKING_PATH=/root/work
-KERNEL_PATH="${WORKING_PATH}/linux-kernel"
+WORKING_PATH=${REPO_PATH}/build
+KERNEL_PATH=${WORKING_PATH}/linux-kernel
+PACKAGE_PATH=${REPO_PATH}/packages
 
 ### Debug commands
 echo "Kernel version: ${KERNEL_VERSION}"
 echo "Working path: ${WORKING_PATH}"
 echo "Kernel repository: ${KERNEL_REPOSITORY}"
 echo "Current path: ${REPO_PATH}"
+echo "Package path: ${PACKAGE_PATH}"
+
 echo "CPU threads: $(nproc --all)"
 grep 'model name' /proc/cpuinfo | uniq
 
@@ -41,8 +44,7 @@ get_next_version () {
 ### Clean up
 rm -rfv ./*.deb
 
-mkdir "${WORKING_PATH}" && cd "${WORKING_PATH}"
-cp -rf "${REPO_PATH}"/{patches,templates} "${WORKING_PATH}"
+mkdir -p "${WORKING_PATH}" && cd "${WORKING_PATH}"
 rm -rf "${KERNEL_PATH}"
 
 ### Dependencies
@@ -77,7 +79,7 @@ fi
 cd "${KERNEL_PATH}" || exit
 
 echo >&2 "===]> Info: Applying patches... "
-[ ! -d "${WORKING_PATH}/patches" ] && {
+[ ! -d "${REPO_PATH}/patches" ] && {
   echo 'Patches directory not found!'
   exit 1
 }
@@ -86,7 +88,7 @@ echo >&2 "===]> Info: Applying patches... "
 while IFS= read -r file; do
   echo "==> Adding $file"
   patch -p1 <"$file"
-done < <(find "${WORKING_PATH}/patches" -type f -name "*.patch" | sort)
+done < <(find "${REPO_PATH}/patches" -type f -name "*.patch" | sort)
 
 #chmod a+x "${KERNEL_PATH}"/debian/rules
 #chmod a+x "${KERNEL_PATH}"/debian/scripts/*
@@ -97,19 +99,20 @@ echo >&2 "===]> Info: Bulding src... "
 cd "${KERNEL_PATH}"
 make clean
 
+# Copy the modified config
+cp "${REPO_PATH}/templates/default-config" "${KERNEL_PATH}/.config"
+
 # Make config friendly with vanilla kernel
-sed -i 's/CONFIG_VERSION_SIGNATURE=.*/CONFIG_VERSION_SIGNATURE=""/g' "${WORKING_PATH}/templates/default-config"
-sed -i 's/CONFIG_SYSTEM_TRUSTED_KEYS=.*/CONFIG_SYSTEM_TRUSTED_KEYS=""/g' "${WORKING_PATH}/templates/default-config"
-sed -i 's/CONFIG_SYSTEM_REVOCATION_KEYS=.*/CONFIG_SYSTEM_REVOCATION_KEYS=""/g' "${WORKING_PATH}/templates/default-config"
-sed -i 's/CONFIG_DEBUG_INFO=y/# CONFIG_DEBUG_INFO is not set/g' "${WORKING_PATH}/templates/default-config"
+sed -i 's/CONFIG_VERSION_SIGNATURE=.*/CONFIG_VERSION_SIGNATURE=""/g' "${KERNEL_PATH}/.config"
+sed -i 's/CONFIG_SYSTEM_TRUSTED_KEYS=.*/CONFIG_SYSTEM_TRUSTED_KEYS=""/g' "${KERNEL_PATH}/.config"
+sed -i 's/CONFIG_SYSTEM_REVOCATION_KEYS=.*/CONFIG_SYSTEM_REVOCATION_KEYS=""/g' "${KERNEL_PATH}/.config"
+sed -i 's/CONFIG_DEBUG_INFO=y/# CONFIG_DEBUG_INFO is not set/g' "${KERNEL_PATH}/.config"
 
 # I want silent boot
-sed -i 's/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=.*/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=4/g' "${WORKING_PATH}/templates/default-config"
-sed -i 's/CONFIG_CONSOLE_LOGLEVEL_QUIET=.*/CONFIG_CONSOLE_LOGLEVEL_QUIET=1/g' "${WORKING_PATH}/templates/default-config"
-sed -i 's/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=.*/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=4/g' "${WORKING_PATH}/templates/default-config"
+sed -i 's/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=.*/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=4/g' "${KERNEL_PATH}/.config"
+sed -i 's/CONFIG_CONSOLE_LOGLEVEL_QUIET=.*/CONFIG_CONSOLE_LOGLEVEL_QUIET=1/g' "${KERNEL_PATH}/.config"
+sed -i 's/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=.*/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=4/g' "${KERNEL_PATH}/.config"
 
-# Copy the modified config
-cp "${WORKING_PATH}/templates/default-config" "${KERNEL_PATH}/.config"
 make olddefconfig
 ./scripts/config --module CONFIG_BT_HCIBCM4377
 
@@ -119,10 +122,9 @@ echo "" >"${KERNEL_PATH}"/.scmversion
 # Build Deb packages
 make -j "$(getconf _NPROCESSORS_ONLN)" deb-pkg LOCALVERSION=-t2 KDEB_PKGVERSION="$(make kernelversion)-$(get_next_version)"
 
-#### Copy artifacts to shared volume
+#### Copy artifacts
 echo >&2 "===]> Info: Copying debs and calculating SHA256 ... "
-#cp -rfv ../*.deb "${REPO_PATH}/"
-#cp -rfv "${KERNEL_PATH}/.config" "${REPO_PATH}/kernel_config_${KERNEL_VERSION}"
-cp -rfv "${KERNEL_PATH}/.config" "/tmp/artifacts/kernel_config_${KERNEL_VERSION}"
-cp -rfv ../*.deb /tmp/artifacts/
-sha256sum ../*.deb >/tmp/artifacts/sha256
+mkdir -p ${PACKAGE_PATH}
+cp -rfv "${KERNEL_PATH}/.config" "${PACKAGE_PATH}/kernel_config_${KERNEL_VERSION}"
+cp -rfv ../*.deb ${PACKAGE_PATH}
+sha256sum ../*.deb > ${PACKAGE_PATH}/sha256
