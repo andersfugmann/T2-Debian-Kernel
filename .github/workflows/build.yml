@@ -34,11 +34,15 @@ jobs:
           echo Contents of '$(pwd)/packages'
           ls -l $(pwd)/packages
 
-      - name: Upload package artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: linux-T2-${{ steps.build.outputs.tag }}
-          path: packages
+          path: |
+            packages/Packages.gz
+            packages/sha256
+            packages/*.deb
+            packages/kernel_config*
 
       - name: Release
         if: github.ref == 'refs/heads/Mainline'
@@ -48,6 +52,7 @@ jobs:
              packages/Packages.gz
              packages/sha256
              packages/*.deb
+             packages/kernel_config*
           tag_name: v${{ steps.build.outputs.tag }}
           body_path: ${{ github.workspace }}/.github/workflows/instructions.txt
           draft: false
