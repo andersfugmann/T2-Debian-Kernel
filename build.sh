@@ -69,19 +69,16 @@ make -C ${KERNEL_PATH} clean
 echo >&2 "===]> Info: Update config... "
 # Copy the modified config
 cat "${REPO_PATH}/templates/default-config" | \
-    sed 's/CONFIG_VERSION_SIGNATURE=.*/CONFIG_VERSION_SIGNATURE=""/g' |
-    sed 's/CONFIG_SYSTEM_TRUSTED_KEYS=.*/CONFIG_SYSTEM_TRUSTED_KEYS=""/g' |
-    sed 's/CONFIG_SYSTEM_REVOCATION_KEYS=.*/CONFIG_SYSTEM_REVOCATION_KEYS=""/g' |
-    sed 's/CONFIG_DEBUG_INFO=y/# CONFIG_DEBUG_INFO is not set/g' |
-    sed 's/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=.*/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=4/g' |
-    sed 's/CONFIG_CONSOLE_LOGLEVEL_QUIET=.*/CONFIG_CONSOLE_LOGLEVEL_QUIET=1/g' |
-    sed 's/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=.*/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=4/g' > ${KERNEL_PATH}/.config
+    sed 's/CONFIG_VERSION_SIGNATURE[ ]*=.*/CONFIG_VERSION_SIGNATURE=""/g' |
+    sed 's/CONFIG_SYSTEM_TRUSTED_KEYS[ ]*=.*/CONFIG_SYSTEM_TRUSTED_KEYS=""/g' |
+    sed 's/CONFIG_SYSTEM_REVOCATION_KEYS[ ]*=.*/CONFIG_SYSTEM_REVOCATION_KEYS=""/g' |
+    sed 's/CONFIG_DEBUG_INFO[ ]*=.*/CONFIG_DEBUG_INFO=n/g' |
+    sed 's/CONFIG_CONSOLE_LOGLEVEL_DEFAULT[ ]*=.*/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=4/g' |
+    sed 's/CONFIG_CONSOLE_LOGLEVEL_QUIET[ ]*=.*/CONFIG_CONSOLE_LOGLEVEL_QUIET=1/g' |
+    sed 's/CONFIG_MESSAGE_LOGLEVEL_DEFAULT[ ]*=.*/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=4/g' > ${KERNEL_PATH}/.config
 
 echo >&2 "===]> Info: Make oldconfig... "
 make -C ${KERNEL_PATH} olddefconfig
-
-
-make olddefconfig
 ./scripts/config --module CONFIG_BT_HCIBCM4377
 
 # Get rid of the dirty tag
