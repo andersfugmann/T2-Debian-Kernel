@@ -18,7 +18,7 @@ Special thanks to @Redecorating for the CI.
 **If this repo helped you in any way, consider inviting a coffee to the people in the [credits](https://github.com/t2linux/T2-Ubuntu-Kernel#credits) (links given [here](https://wiki.t2linux.org/contribute/)).**
 
 
-### Download package manually
+## Installation instructions
 
 Download the .deb packages of **linux-headers** and **linux-image** of the kernel you wish to install from the [releases](https://github.com/andersfugmann/T2-Debian-Kernel/releases) section.
 
