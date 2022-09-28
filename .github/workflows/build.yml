@@ -9,16 +9,9 @@ on:
   pull_request:
 
 jobs:
-  build:
+  Build:
     runs-on: ubuntu-latest
     steps:
-      - name: Free up disk space for the CI
-        uses: AdityaGarg8/remove-unwanted-software@v1
-        with:
-          remove-android: 'true'
-          remove-dotnet: 'true'
-          remove-haskell: 'true'
-
       - name: 'Checkout Repo'
         uses: actions/checkout@v2
 
