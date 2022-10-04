@@ -45,7 +45,7 @@ apt-get install -y build-essential fakeroot libncurses-dev bison flex libssl-dev
 ### get Kernel and Drivers
 echo >&2 "===]> Info: Obtain sources... "
 
-curl https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz | tar -C ${WORKING_PATH} -Jx
+curl https://mirrors.edge.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-${KERNEL_VERSION}.tar.xz | tar -C ${WORKING_PATH} -Jx
 git clone --depth 1 "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
 git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
 
