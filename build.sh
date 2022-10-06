@@ -93,9 +93,9 @@ ls -l ${WORKING_PATH}/*.deb
 echo >&2 "===]> Info: Copying debs and calculating SHA256 ... "
 mkdir -p ${PACKAGE_PATH}
 rm -f ${WORKING_PATH}/linux-image-*-dbg_*.deb
-cp -v ${KERNEL_PATH}/.config ${PACKAGE_PATH}/kernel_config_${KERNEL_VERSION}
-cp -v ${WORKING_PATH}/*.deb ${PACKAGE_PATH}
-sha256sum ${WORKING_PATH}/*.deb > ${PACKAGE_PATH}/sha256
+mv -v ${KERNEL_PATH}/.config ${PACKAGE_PATH}/kernel_config_${KERNEL_VERSION}
+mv -v ${WORKING_PATH}/*.deb ${PACKAGE_PATH}
+sha256sum ${PACKAGE_PATH}/*.deb > ${PACKAGE_PATH}/sha256
 
 echo >&2 "===]> Info: Clean up build dir"
 rm -fr ${WORKING_PATH}
