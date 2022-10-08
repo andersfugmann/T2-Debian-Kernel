@@ -1,1 +1,1 @@
-Installation instructions are given [here](https://github.com/andersfugmann/T2-Debian-Kernel#download-package-manually).
+Installation instructions are given [here](https://github.com/andersfugmann/T2-Debian-Kernel#installation).
