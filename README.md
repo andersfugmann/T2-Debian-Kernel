@@ -17,7 +17,29 @@ Special thanks to @Redecorating for the CI.
 
 **If this repo helped you in any way, consider inviting a coffee to the people in the [credits](https://github.com/t2linux/T2-Ubuntu-Kernel#credits) (links given [here](https://wiki.t2linux.org/contribute/)).**
 
-**Note :-** By default, whenever you run `update_t2_kernel`, the script installs the latest Kernel (LTS or Mainline, depending on your script) as well as preserves the Kernel which is booted during running of the script. Rest all old T2 kernels get removed (self compiled and official Ubuntu Kernels are not affected). In case you wish to remove the Kernel which is booted as well, which may be required which switching to LTS Kernel from Mainline ones, run `update_t2_kernel --remove-current`.
+### Using the kernel upgrade script
+
+firstly add the **t2-ubuntu-repo** apt repo :-
+
+```bash
+curl -s --compressed "https://adityagarg8.github.io/t2-ubuntu-repo/key.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/t2-ubuntu-repo.gpg >/dev/null
+sudo curl -s --compressed -o /etc/apt/sources.list.d/t2.list "https://adityagarg8.github.io/t2-ubuntu-repo/t2.list"
+sudo apt update
+```
+
+then, install the script by running :-
+
+```bash
+sudo apt install t2-kernel-script-debian
+```
+
+now, whenever you wish to upgrade your kernel, run :-
+
+```bash
+update_t2_kernel
+```
+
+**note :-** by default, whenever you run `update_t2_kernel`, the script installs the latest kernel (lts or mainline, depending on your script) as well as preserves the kernel which is booted during running of the script. rest all old t2 kernels get removed (self compiled and official debian kernels are not affected). in case you wish to remove the kernel which is booted as well, run `update_t2_kernel --remove-current`.
 
 ### Download package manually
 
