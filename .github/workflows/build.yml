@@ -1,81 +1,207 @@
 ---
 name: Build Kernel Package
 
+# yamllint disable rule:line-length
 # yamllint disable-line rule:truthy
 on:
   push:
-    paths-ignore:
-      - '.github/workflows/*.yml'
-      - 'apt-repo/*.txt'
-  pull_request:
-    paths-ignore:
-      - '.github/workflows/*.yml'
-      - 'apt-repo/*.txt'
+  schedule:
+    - cron:  '0 */6 * * *'
+
 
 jobs:
-  Lint:
-    runs-on: ubuntu-22.04
+  extract_params:
+    name: Extract Parameters
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.verify.outputs.should_build }}
+      release_tag: ${{ steps.verify.outputs.release_tag }}
     steps:
-      - name: 'Checkout repo'
-        uses: actions/checkout@v2
-      - name: 'Set up Python 3.9'
-        uses: actions/setup-python@v2
-      - name: 'Install dependencies'
+      - name: Fetch build parameters
+        id: fetch
         run: |
-          python -m pip install --upgrade pip
-          pip install yamllint
-          sudo apt-get install shellcheck bash
-      - name: 'Analysing the code'
+          git clone --depth 1 https://github.com/t2linux/T2-Ubuntu-Kernel.git
+          grep '^KERNEL_VERSION=' T2-Ubuntu-Kernel/build.sh | head -n 1 > build_params
+          grep '^APPLE_BCE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+          grep '^APPLE_BCE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+          grep '^APPLE_IBRIDGE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+          grep '^PKGREL=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+
+          grep '^APPLE_SMC_DRIVER_GIT_URL=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
+          grep '^APPLE_SMC_DRIVER_BRANCH_NAME=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
+          grep '^APPLE_SMC_DRIVER_COMMIT_HASH=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
+
+          COMMIT=$(cd T2-Ubuntu-Kernel; git log --no-decorate | head -n 1 | cut -f2 -d" ")
+          echo "$COMMIT" >> T2-Ubuntu-Kernel.sha
+
+      - name: Store build params
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-params
+          path: |
+            build_params
+            T2-Ubuntu-Kernel.sha
+            T2-Ubuntu-Kernel/patches/*.patch
+            T2-Ubuntu-Kernel/templates/*
+
+      - name: Verify if the build should be made
+        id: verify
         run: |
-          yamllint -c ${{ github.workspace }}/.github/workflows/.ymllint .
-          shellcheck ./*.sh
-  Build:
-    needs: [Lint]
-    runs-on: ubuntu-22.04
+          SHA=$(cat T2-Ubuntu-Kernel.sha)
+          PREV_SHA=$(curl -L --silent https://github.com/andersfugmann/T2-Debian-Kernel/releases/latest/download/T2-Ubuntu-Kernel.sha)
+
+          echo Test: "${PREV_SHA}" = "${SHA}"
+          if [ "${PREV_SHA}" = "${SHA}" ]; then
+            echo "should_build=false" >> $GITHUB_OUTPUT;
+          else
+            echo "should_build=true" >> $GITHUB_OUTPUT;
+          fi;
+          source ./build_params
+          echo "release_tag=${KERNEL_VERSION}-${PKGREL}" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+  build:
+    name: Build kernel
+    needs: extract_params
+    if: ${{ needs.extract_params.outputs.should_build == 'true' }}
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Free up disk space for the CI
-        uses: AdityaGarg8/remove-unwanted-software@v1
+      - name: Get Build Parameters
+        uses: actions/download-artifact@v3
         with:
-          remove-android: 'true'
-          remove-dotnet: 'true'
-          remove-haskell: 'true'
+          name: build-params
 
-      - name: 'Checkout Repo'
-        uses: actions/checkout@v2
-
-      - name: Build script
-        id: build
+      - name: list artifacts
         run: |
-          mkdir /tmp/artifacts
-          VERSION=$(grep ^KERNEL_VERSION build.sh | head -n1| cut -d = -f2)
-          REL=$(grep "PKGREL=\d*" build.sh | cut -d = -f2)
-          #REL=$( git tag |grep -F $VERSION|sort -r|head -n1|tr -d v)
-          echo Building $VERSION-$REL
-          echo "::set-output name=tag::${VERSION}-${REL}"
-          sudo ./build.sh
+          find .
+          cat ./build_params
 
-          cd /tmp/artifacts
-          rm /tmp/artifacts/*dbg*
-          ls -l
-          dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
-          ls -l
+      - name: Setup Environment
+        run: |
+          source ./build_params
+          cat ./build_params >> $GITHUB_ENV
+          echo "KERNEL_PATH=${GITHUB_WORKSPACE}/linux-${KERNEL_VERSION}" >> $GITHUB_ENV
 
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v2
+      - name: Get Kernel
+        run: |
+          curl --silent https://mirrors.edge.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-${KERNEL_VERSION}.tar.xz | tar -Jx
+
+      - name: Get repositories
+        run: |
+          git clone --depth 1 "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
+          git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
+          git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} ${GITHUB_WORKSPACE}/patches
+
+      - name: Patch kernel
+        run: |
+          rm -f ${GITHUB_WORKSPACE}/patches/100*
+          rm -f ${GITHUB_WORKSPACE}/patches/000{1..9}*.patch
+          cp T2-Ubuntu-Kernel/patches/*.patch ${GITHUB_WORKSPACE}/patches
+          cd ${KERNEL_PATH}
+          while read -r file; do \
+            patch -p1 < "$file"; \
+          done < <(find "${GITHUB_WORKSPACE}/patches" -type f -name "*.patch" | sort)
+
+
+      - name: Create Kernel Config
+        run: >
+          cat "./T2-Ubuntu-Kernel/templates/default-config" |
+          sed 's/CONFIG_VERSION_SIGNATURE[ ]*=.*/CONFIG_VERSION_SIGNATURE=""/g' |
+          sed 's/CONFIG_SYSTEM_TRUSTED_KEYS[ ]*=.*/CONFIG_SYSTEM_TRUSTED_KEYS=""/g' |
+          sed 's/CONFIG_SYSTEM_REVOCATION_KEYS[ ]*=.*/CONFIG_SYSTEM_REVOCATION_KEYS=""/g' |
+          sed 's/CONFIG_DEBUG_INFO[ ]*=.*/CONFIG_DEBUG_INFO=n/g' |
+          sed 's/CONFIG_CONSOLE_LOGLEVEL_DEFAULT[ ]*=.*/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=4/g' |
+          sed 's/CONFIG_CONSOLE_LOGLEVEL_QUIET[ ]*=.*/CONFIG_CONSOLE_LOGLEVEL_QUIET=1/g' |
+          sed 's/CONFIG_MESSAGE_LOGLEVEL_DEFAULT[ ]*=.*/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=4/g' > ${KERNEL_PATH}/.config
+
+      - name: Update Kernel Config
+        run: |
+          make -C ${KERNEL_PATH} olddefconfig
+          cd ${KERNEL_PATH}; ./scripts/config --module CONFIG_BT_HCIBCM4377
+          pwd
+
+      - name: Build Kernel
+        env:
+          DOCKER_IMAGE: debian:unstable
+          DEBIAN_PACKAGES: >
+            build-essential fakeroot libncurses-dev bison flex libssl-dev libelf-dev
+            openssl dkms libudev-dev libpci-dev libiberty-dev autoconf xz-utils git
+            libcap-dev bc rsync cpio debhelper kernel-wedge gawk dwarves zstd python3
+
+        run: |
+          cat <<EOF > build.sh
+          #!/bin/sh
+          true && apt -q update
+          true && apt -q install -y ${DEBIAN_PACKAGES}
+          true && make -C /workspace/linux-${KERNEL_VERSION} olddefconfig
+          #echo 1 > /workspace/linux-image-${KERNEL_VERSION}-t2_${KERNEL_VERSION}-${PKGREL}_amd64.deb
+          #echo 1 > /workspace/linux-image-${KERNEL_VERSION}-t2-dbg_${KERNEL_VERSION}-${PKGREL}_amd64.deb
+          #echo 1 > /workspace/linux-headers-${KERNEL_VERSION}-t2_${KERNEL_VERSION}-${PKGREL}_amd64.deb
+          #echo 1 > /workspace/linux-libc-dev_${KERNEL_VERSION}-${PKGREL}_amd64.deb
+          true && make -C /workspace/linux-${KERNEL_VERSION} bindeb-pkg \
+            -j $(( $(getconf _NPROCESSORS_ONLN) + 2 )) \
+            LOCALVERSION=-t2 KDEB_PKGVERSION=${KERNEL_VERSION}-${PKGREL}
+          EOF
+          chmod +x build.sh
+          echo "########"
+          cat build.sh
+          echo "########"
+
+          docker pull ${DOCKER_IMAGE}
+          docker run -t -v "$(pwd):/workspace" ${DOCKER_IMAGE} /bin/bash -c /workspace/build.sh
+          ls -l *deb
+
+      - name: Prepare Release
+        run: |
+          mkdir release
+          cp ${KERNEL_PATH}/.config release/kernel_config_${KERNEL_VERSION}
+          sudo rm -fr linux-${KERNEL_VERSION}
+          sudo rm -f linux-image-*-dbg_*.deb
+          sha256sum *deb > sha256
+
+      - name: Store Build Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: linux-T2-${{ steps.build.outputs.tag }}
-          path: /tmp/artifacts/*
+          name: build_artifacts
+          path: |
+            T2-Ubuntu-Kernel.sha
+            *.deb
+            sha256
+
+  release:
+    name: Create Release
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [extract_params, build]
+    steps:
+      - name: Get Build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build_artifacts
 
       - name: Release
-        if: github.ref == 'refs/heads/Mainline'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            /tmp/artifacts/Packages.gz
-            /tmp/artifacts/sha256
-            /tmp/artifacts/*.deb
-          tag_name: v${{ steps.build.outputs.tag }}
-          body_path: ${{ github.workspace }}/.github/workflows/instructions.txt
-          draft: false
+            *.deb
+            T2-Ubuntu-Kernel.sha
+            sha256
+
+          tag_name: v-${{ needs.extract_params.outputs.release_tag }}
+          draft: true
+          body: >
+            Installation instructions are given
+            [here](https://github.com/andersfugmann/T2-Debian-Kernel#installation).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  skip_build:
+    name: Skip build
+    needs: extract_params
+    if: ${{ needs.extract_params.outputs.should_build == 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build skipped
+        run: |
+          echo "Skippping build - already released"
