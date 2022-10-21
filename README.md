@@ -3,11 +3,11 @@
 Debian kernel with Apple T2 patches built-in. Kernels are build on
 debian unstable.
 
-The kernels are based on [T5 Ubuntu
+The kernels are based on [T2 Ubuntu
 kernels](https://github.com/t2linux/T2-Ubuntu-Kernel).
 The build periodically (6h) checks for changes and in case of a change,
-grabs build parameters (kernel version) patches and driver
-repositories.
+grabs build parameters, patches and driver repositories to build a new
+set of debian packages.
 
 ## Installation
 
