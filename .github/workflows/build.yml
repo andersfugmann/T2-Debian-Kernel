@@ -154,8 +154,7 @@ jobs:
 
       - name: Prepare Release
         run: |
-          mkdir release
-          cp ${KERNEL_PATH}/.config release/kernel_config_${KERNEL_VERSION}
+          cp ${KERNEL_PATH}/.config kernel_config_${KERNEL_VERSION}
           sudo rm -fr linux-${KERNEL_VERSION}
           sudo rm -f linux-image-*-dbg_*.deb
           sha256sum *deb > sha256
@@ -165,6 +164,7 @@ jobs:
         with:
           name: build_artifacts
           path: |
+            kernel_config_*
             T2-Ubuntu-Kernel.sha
             *.deb
             sha256
@@ -184,6 +184,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
+            kernel_config_*
             *.deb
             T2-Ubuntu-Kernel.sha
             sha256
