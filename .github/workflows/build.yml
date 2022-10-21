@@ -188,8 +188,8 @@ jobs:
             T2-Ubuntu-Kernel.sha
             sha256
 
-          tag_name: v-${{ needs.extract_params.outputs.release_tag }}
-          draft: true
+          tag_name: v${{ needs.extract_params.outputs.release_tag }}
+          draft: false
           body: >
             Installation instructions are given
             [here](https://github.com/andersfugmann/T2-Debian-Kernel#installation).
