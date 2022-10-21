@@ -113,14 +113,12 @@ jobs:
           ./scripts/config --set-val CONFIG_MESSAGE_LOGLEVEL_DEFAULT 4
           ./scripts/config --module CONFIG_BT_HCIBCM4377
 
-          make -C ${KERNEL_PATH} olddefconfig
       - name: Build Kernel
         env:
           DOCKER_IMAGE: debian:unstable
           DEBIAN_PACKAGES: >
-            build-essential fakeroot libncurses-dev bison flex libssl-dev libelf-dev
-            openssl dkms libudev-dev libpci-dev libiberty-dev autoconf xz-utils git
-            libcap-dev bc rsync cpio debhelper kernel-wedge gawk dwarves zstd python3
+            build-essential debhelper
+            bc rsync kmod cpio bison flex libelf-dev libssl-dev
 
         run: |
           cat <<EOF > build.sh
