@@ -91,35 +91,33 @@ jobs:
         run: |
           git clone --depth 1 "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
           git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
-          git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} ${GITHUB_WORKSPACE}/patches
+          git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
 
       - name: Patch kernel
         run: |
-          rm -f ${GITHUB_WORKSPACE}/patches/100*
-          rm -f ${GITHUB_WORKSPACE}/patches/000{1..9}*.patch
-          cp T2-Ubuntu-Kernel/patches/*.patch ${GITHUB_WORKSPACE}/patches
+          rm -vf patches/100*.patch
+          rm -vf patches/000*.patch
+          cp -v T2-Ubuntu-Kernel/patches/*.patch patches
           cd ${KERNEL_PATH}
           while read -r file; do \
+            echo "Applying patch: $file"; \
             patch -p1 < "$file"; \
           done < <(find "${GITHUB_WORKSPACE}/patches" -type f -name "*.patch" | sort)
 
 
       - name: Create Kernel Config
-        run: >
-          cat "./T2-Ubuntu-Kernel/templates/default-config" |
-          sed 's/CONFIG_VERSION_SIGNATURE[ ]*=.*/CONFIG_VERSION_SIGNATURE=""/g' |
-          sed 's/CONFIG_SYSTEM_TRUSTED_KEYS[ ]*=.*/CONFIG_SYSTEM_TRUSTED_KEYS=""/g' |
-          sed 's/CONFIG_SYSTEM_REVOCATION_KEYS[ ]*=.*/CONFIG_SYSTEM_REVOCATION_KEYS=""/g' |
-          sed 's/CONFIG_DEBUG_INFO[ ]*=.*/CONFIG_DEBUG_INFO=n/g' |
-          sed 's/CONFIG_CONSOLE_LOGLEVEL_DEFAULT[ ]*=.*/CONFIG_CONSOLE_LOGLEVEL_DEFAULT=4/g' |
-          sed 's/CONFIG_CONSOLE_LOGLEVEL_QUIET[ ]*=.*/CONFIG_CONSOLE_LOGLEVEL_QUIET=1/g' |
-          sed 's/CONFIG_MESSAGE_LOGLEVEL_DEFAULT[ ]*=.*/CONFIG_MESSAGE_LOGLEVEL_DEFAULT=4/g' > ${KERNEL_PATH}/.config
-
-      - name: Update Kernel Config
         run: |
+          cp T2-Ubuntu-Kernel/templates/default-config ${KERNEL_PATH}/.config
           make -C ${KERNEL_PATH} olddefconfig
-          cd ${KERNEL_PATH}; ./scripts/config --module CONFIG_BT_HCIBCM4377
-          pwd
+          cd ${KERNEL_PATH}
+          # ./scripts/config --set-str CONFIG_VERSION_SIGNATURE ""
+          ./scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
+          ./scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
+          ./scripts/config --disable CONFIG_DEBUG_INFO
+          ./scripts/config --set-val CONFIG_CONSOLE_LOGLEVEL_DEFAULT 4
+          ./scripts/config --set-val CONFIG_CONSOLE_LOGLEVEL_QUIET 1
+          ./scripts/config --set-val CONFIG_MESSAGE_LOGLEVEL_DEFAULT 4
+          ./scripts/config --module CONFIG_BT_HCIBCM4377
 
       - name: Build Kernel
         env:
@@ -132,26 +130,16 @@ jobs:
         run: |
           cat <<EOF > build.sh
           #!/bin/sh
-          true && apt -q update
-          true && apt -q install -y ${DEBIAN_PACKAGES}
-          true && make -C /workspace/linux-${KERNEL_VERSION} olddefconfig
-          #echo 1 > /workspace/linux-image-${KERNEL_VERSION}-t2_${KERNEL_VERSION}-${PKGREL}_amd64.deb
-          #echo 1 > /workspace/linux-image-${KERNEL_VERSION}-t2-dbg_${KERNEL_VERSION}-${PKGREL}_amd64.deb
-          #echo 1 > /workspace/linux-headers-${KERNEL_VERSION}-t2_${KERNEL_VERSION}-${PKGREL}_amd64.deb
-          #echo 1 > /workspace/linux-libc-dev_${KERNEL_VERSION}-${PKGREL}_amd64.deb
-          true && make -C /workspace/linux-${KERNEL_VERSION} bindeb-pkg \
-            -j $(( $(getconf _NPROCESSORS_ONLN) + 2 )) \
+          apt -q update
+          apt -q install -y ${DEBIAN_PACKAGES}
+          make -C /workspace/linux-${KERNEL_VERSION} oldconfig
+          make -C /workspace/linux-${KERNEL_VERSION} bindeb-pkg \
+            -j $(( $(getconf _NPROCESSORS_ONLN) + 1 )) \
             LOCALVERSION=-t2 KDEB_PKGVERSION=${KERNEL_VERSION}-${PKGREL}
           EOF
           chmod +x build.sh
-          echo "########"
-          cat build.sh
-          echo "########"
-
           docker pull ${DOCKER_IMAGE}
           docker run -t -v "$(pwd):/workspace" ${DOCKER_IMAGE} /bin/bash -c /workspace/build.sh
-          ls -l *deb
-
       - name: Prepare Release
         run: |
           cp ${KERNEL_PATH}/.config kernel_config_${KERNEL_VERSION}
