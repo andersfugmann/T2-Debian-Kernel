@@ -138,6 +138,15 @@ jobs:
           ./scripts/config --enable CONFIG_SLS
           ./scripts/config --enable CONFIG_DEBUG_INFO_BTF
 
+      - name: Free up disk space
+        run: |
+          echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
+          sudo apt -q remove dotnet-\* php\* python3\* mono\* aspnetcore\* clang\* \*java\* ant -y
+          sudo rm -fr /usr/local/lib/android
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          df -h >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
       - name: Build Kernel
         env:
           DOCKER_IMAGE: debian:unstable
@@ -151,6 +160,7 @@ jobs:
           #!/bin/sh
           apt -q update
           apt -q install -y ${DEBIAN_PACKAGES}
+          apt -q autoclean
           make -C /workspace/linux-${KERNEL_VERSION} olddefconfig
           make -C /workspace/linux-${KERNEL_VERSION} bindeb-pkg \
             -j $(( $(getconf _NPROCESSORS_ONLN) + 1 )) \
