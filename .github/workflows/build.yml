@@ -5,8 +5,14 @@ name: Build Kernel Package
 # yamllint disable-line rule:truthy
 on:
   push:
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: 'Force kernel build and release'
+        required: true
+        type: boolean
   schedule:
-    - cron:  '0 */6 * * *'
+    - cron: '0 */6 * * *'
 
 
 jobs:
@@ -20,6 +26,7 @@ jobs:
       - name: Fetch build parameters
         id: fetch
         run: |
+          echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           git clone --depth 1 https://github.com/t2linux/T2-Ubuntu-Kernel.git
           grep '^KERNEL_VERSION=' T2-Ubuntu-Kernel/build.sh | head -n 1 > build_params
           grep '^APPLE_BCE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
@@ -34,6 +41,12 @@ jobs:
           COMMIT=$(cd T2-Ubuntu-Kernel; git log --no-decorate | head -n 1 | cut -f2 -d" ")
           echo "$COMMIT" >> T2-Ubuntu-Kernel.sha
 
+          echo "Build parameters: " >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat build_params >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "T2-Ubuntu-Kernel commit sha: $COMMIT" >> $GITHUB_STEP_SUMMARY
+
       - name: Store build params
         uses: actions/upload-artifact@v3
         with:
@@ -47,23 +60,32 @@ jobs:
       - name: Verify if the build should be made
         id: verify
         run: |
+          echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           SHA=$(cat T2-Ubuntu-Kernel.sha)
           PREV_SHA=$(curl -L --silent https://github.com/andersfugmann/T2-Debian-Kernel/releases/latest/download/T2-Ubuntu-Kernel.sha)
-
-          echo Test: "${PREV_SHA}" = "${SHA}"
-          if [ "${PREV_SHA}" = "${SHA}" ]; then
-            echo "should_build=false" >> $GITHUB_OUTPUT;
-          else
-            echo "should_build=true" >> $GITHUB_OUTPUT;
-          fi;
           source ./build_params
+
+          SHOULD_BUILD=true
+          if [ "${PREV_SHA}" = "${SHA}" ]; then
+            SHOULD_BUILD=false
+          fi
+
+          echo "should_build=${SHOULD_BUILD}" >> $GITHUB_OUTPUT
           echo "release_tag=${KERNEL_VERSION}-${PKGREL}" >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
+
+          echo 'Output parameters' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat $GITHUB_OUTPUT >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo 'Environment' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          env >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
   build:
     name: Build kernel
     needs: extract_params
-    if: ${{ needs.extract_params.outputs.should_build == 'true' }}
+    if: ${{ needs.extract_params.outputs.should_build || inputs.force_build }}
     runs-on: ubuntu-latest
 
     steps:
@@ -77,6 +99,7 @@ jobs:
           source ./build_params
           cat ./build_params >> $GITHUB_ENV
           echo "KERNEL_PATH=${GITHUB_WORKSPACE}/linux-${KERNEL_VERSION}" >> $GITHUB_ENV
+          echo "### Build kernel: ${KERNEL_VERSION}" >> $GITHUB_STEP_SUMMARY
 
       - name: Get Kernel
         run: |
@@ -90,21 +113,21 @@ jobs:
 
       - name: Patch kernel
         run: |
+          echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           rm -vf patches/100*.patch
           rm -vf patches/000*.patch
           cp -v T2-Ubuntu-Kernel/patches/*.patch patches
           cd ${KERNEL_PATH}
-          while read -r file; do \
-            echo "Applying patch: $file"; \
-            patch -p1 < "$file"; \
+          echo "Applying patches" >> $GITHUB_STEP_SUMMARY
+          while read -r file; do
+            echo " * $file" >> $GITHUB_STEP_SUMMARY
+            patch -p1 < "$file"
           done < <(find "${GITHUB_WORKSPACE}/patches" -type f -name "*.patch" | sort)
-
 
       - name: Create Kernel Config
         run: |
           cp T2-Ubuntu-Kernel/templates/default-config ${KERNEL_PATH}/.config
           cd ${KERNEL_PATH}
-          # ./scripts/config --set-str CONFIG_VERSION_SIGNATURE ""
           ./scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
           ./scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
           ./scripts/config --disable CONFIG_DEBUG_INFO
@@ -112,13 +135,16 @@ jobs:
           ./scripts/config --set-val CONFIG_CONSOLE_LOGLEVEL_QUIET 1
           ./scripts/config --set-val CONFIG_MESSAGE_LOGLEVEL_DEFAULT 4
           ./scripts/config --module CONFIG_BT_HCIBCM4377
+          ./scripts/config --enable CONFIG_SLS
+          ./scripts/config --enable CONFIG_DEBUG_INFO_BTF
 
       - name: Build Kernel
         env:
           DOCKER_IMAGE: debian:unstable
           DEBIAN_PACKAGES: >
             build-essential debhelper
-            bc rsync kmod cpio bison flex libelf-dev libssl-dev
+            bc rsync kmod cpio bison flex libelf-dev libssl-dev pahole
+            python3-minimal
 
         run: |
           cat <<EOF > build.sh
@@ -181,7 +207,7 @@ jobs:
   skip_build:
     name: Skip build
     needs: extract_params
-    if: ${{ needs.extract_params.outputs.should_build == 'false' }}
+    if: ${{ ! (needs.extract_params.outputs.should_build || inputs.force_build) }}
     runs-on: ubuntu-latest
     steps:
       - name: Build skipped
