@@ -42,13 +42,18 @@ the kernel you wish to install from the
 [releases](https://github.com/andersfugmann/T2-Debian-Kernel/releases)
 section.
 
-Assuming you downloaded debian packages to `./Downloads` do:
-```
-sudo dpkg -i linux-headers*.deb
-sudo dpkg -i linux-image*.deb
+Enter the directory where the packages has been downloaded to, and run:
+```bash
+sudo dpkg -i linux-headers*.deb && sudo dpkg -i linux-image*.deb
 ```
 
 Restart your Mac.
+
+Consider removing previous images:
+```bash
+dpkg -l linux-image\*
+apt purge linux-{image,headers}-<insert-version-here>*
+```
 
 ## More information
 Please visit [T2 Ubuntu kernels](https://github.com/t2linux/T2-Ubuntu-Kernel).
