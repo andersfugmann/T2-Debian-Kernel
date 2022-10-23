@@ -36,15 +36,12 @@ jobs:
           grep '^APPLE_SMC_DRIVER_GIT_URL=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
           grep '^APPLE_SMC_DRIVER_BRANCH_NAME=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
           grep '^APPLE_SMC_DRIVER_COMMIT_HASH=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
-
-          COMMIT=$(cd T2-Ubuntu-Kernel; git log --no-decorate | head -n 1 | cut -f2 -d" ")
-          echo "$COMMIT" >> T2-Ubuntu-Kernel.sha
+          echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
 
           echo "Build parameters: " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat build_params >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "T2-Ubuntu-Kernel commit sha: $COMMIT" >> $GITHUB_STEP_SUMMARY
 
       - name: Store build params
         uses: actions/upload-artifact@v3
@@ -52,22 +49,20 @@ jobs:
           name: build-params
           path: |
             build_params
-            T2-Ubuntu-Kernel.sha
             T2-Ubuntu-Kernel/patches/*.patch
 
       - name: Verify if the build should be made
         id: verify
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
-          SHA=$(cat T2-Ubuntu-Kernel.sha)
-          PREV_SHA=$(curl -L --silent https://github.com/andersfugmann/T2-Debian-Kernel/releases/latest/download/T2-Ubuntu-Kernel.sha)
-          source ./build_params
+          curl -L --silent https://github.com/andersfugmann/T2-Debian-Kernel/releases/latest/download/build_params > prev_build_params || true
 
           SHOULD_BUILD=true
-          if [ "${PREV_SHA}" = "${SHA}" ]; then
+          if diff -q build_params prev_build_params > /dev/null; then
             SHOULD_BUILD=false
           fi
 
+          source ./build_params
           echo "should_build=${SHOULD_BUILD}" >> $GITHUB_OUTPUT
           echo "release_tag=${KERNEL_VERSION}-${PKGREL}" >> $GITHUB_OUTPUT
 
@@ -254,7 +249,7 @@ jobs:
           name: build_artifacts
           path: |
             kernel_config_*
-            T2-Ubuntu-Kernel.sha
+            build_params
             *.deb
             sha256
 
@@ -275,7 +270,7 @@ jobs:
           files: |
             kernel_config_*
             *.deb
-            T2-Ubuntu-Kernel.sha
+            build_params
             sha256
 
           tag_name: v${{ needs.extract_params.outputs.release_tag }}
