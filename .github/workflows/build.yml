@@ -30,7 +30,6 @@ jobs:
           git clone --depth 1 https://github.com/t2linux/T2-Ubuntu-Kernel.git
           grep '^KERNEL_VERSION=' T2-Ubuntu-Kernel/build.sh | head -n 1 > build_params
           grep '^APPLE_BCE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
-          grep '^APPLE_BCE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
           grep '^APPLE_IBRIDGE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
           grep '^PKGREL=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
 
@@ -85,6 +84,7 @@ jobs:
     steps:
       - name: Copy Debian Kernel config
         run: |
+          echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cat <<EOF > build.sh
           #!/bin/bash -x
             apt -q update
@@ -92,6 +92,12 @@ jobs:
             CONFIG=\$(ls /boot/config-*-amd64 | sort | tail -n 1)
             cp -v \${CONFIG} /workspace/debian_kernel_config
           EOF
+
+          echo "#### script:" >> $GITHUB_STEP_SUMMARY
+          echo '```sh' >> $GITHUB_STEP_SUMMARY
+          cat build.sh >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
           chmod +x build.sh
           docker pull debian:unstable
           docker run -t -v "$(pwd):/workspace" debian:unstable /bin/bash -c /workspace/build.sh
@@ -186,6 +192,7 @@ jobs:
 
       - name: Free up disk space
         id: free_space
+        if: false
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
 
@@ -195,6 +202,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
           sudo apt -q remove dotnet\* php\* python\* mono\* aspnet\* clang\* java\* ant openjdk\* -y
+          sudo apt -q autoremove -y
           sudo rm -fr /usr/local/lib/android
 
           echo 'After: ' >> $GITHUB_STEP_SUMMARY
@@ -224,19 +232,14 @@ jobs:
             LOCALVERSION=-t2 KDEB_PKGVERSION=${KERNEL_VERSION}-${PKGREL}
           EOF
 
-          echo "#### Build script:" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "#### script:" >> $GITHUB_STEP_SUMMARY
+          echo '```sh' >> $GITHUB_STEP_SUMMARY
           cat build.sh >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
           chmod +x build.sh
           docker pull ${DOCKER_IMAGE}
           docker run -t -v "$(pwd):/workspace" ${DOCKER_IMAGE} /bin/bash -c /workspace/build.sh
-
-          echo "#### Space left:"
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          df -h >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Prepare Release
         run: |
