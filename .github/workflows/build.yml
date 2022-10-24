@@ -78,10 +78,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Copy Debian Kernel config
+        id: copt_debian_kernel_config
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cat <<EOF > build.sh
-          #!/bin/bash -x
+          #!/bin/bash -ex
             apt -q update
             apt -q install -y linux-image-amd64
             CONFIG=\$(ls /boot/config-*-amd64 | sort | tail -n 1)
@@ -116,6 +117,7 @@ jobs:
           name: build-params
 
       - name: Setup Environment
+        id: setup_environment
         run: |
           source ./build_params
           cat ./build_params >> $GITHUB_ENV
@@ -157,12 +159,13 @@ jobs:
           cp debian_kernel_config ${KERNEL_PATH}/.config
 
           cd ${KERNEL_PATH}
-          ./scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
-          ./scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
           ./scripts/config --module CONFIG_BT_HCIBCM4377
+          ./scripts/config --module CONFIG_APPLE_BCE
+          ./scripts/config --module CONFIG_APPLE_IBRIDGE
 
           # Only support intel cpu
           ./scripts/config --disable CONFIG_GENERIC_CPU
+          ./scripts/config --enable CONFIG_PROCESSOR_SELECT
           ./scripts/config --enable CONFIG_MCORE2
           ./scripts/config --enable CONFIG_CPU_SUP_INTEL
           ./scripts/config --disable CONFIG_X86_AMD_PLATFORM_DEVICE
@@ -217,17 +220,18 @@ jobs:
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cat <<EOF > build.sh
-          #!/bin/bash -x
+          #!/bin/bash -ex
           apt -q update
           apt -q install -y ${DEBIAN_PACKAGES}
           apt -q autoclean
+
           make -C /workspace/linux-${KERNEL_VERSION} olddefconfig
+
           make -C /workspace/linux-${KERNEL_VERSION} bindeb-pkg \
             -j $(( $(getconf _NPROCESSORS_ONLN) + 1 )) \
             LOCALVERSION=-t2 KDEB_PKGVERSION=${KERNEL_VERSION}-${PKGREL}
           EOF
 
-          echo "#### script:" >> $GITHUB_STEP_SUMMARY
           echo '```sh' >> $GITHUB_STEP_SUMMARY
           cat build.sh >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
