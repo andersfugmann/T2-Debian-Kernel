@@ -37,9 +37,16 @@ jobs:
 
           grep '^APPLE_SMC_DRIVER_GIT_URL=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
           grep '^APPLE_SMC_DRIVER_BRANCH_NAME=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
-          grep '^APPLE_SMC_DRIVER_COMMIT_HASH=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
-          echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
 
+          APPLE_SMC_DRIVER_COMMIT_HASH=$(grep '^APPLE_SMC_DRIVER_COMMIT_HASH=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 | cut -d'=' -f2)
+          if [ "${APPLE_SMC_DRIVER_COMMIT_HASH}" = "HEAD" ]; then
+            source build_params
+            git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
+            APPLE_SMC_DRIVER_COMMIT_HASH=$(git -C patches rev-parse HEAD)
+          fi
+          echo APPLE_SMC_DRIVER_COMMIT_HASH=${APPLE_SMC_DRIVER_COMMIT_HASH} >> build_params
+
+          echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
           echo "Build parameters: " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat build_params >> $GITHUB_STEP_SUMMARY
@@ -135,7 +142,7 @@ jobs:
           git clone --depth 1 "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
           git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
-
+          git checkout -C patches ${APPLE_SMC_DRIVER_COMMIT_HASH}
       - name: Patch kernel
         id: patch_kernel
         run: |
