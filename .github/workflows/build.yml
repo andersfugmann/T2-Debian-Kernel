@@ -142,7 +142,7 @@ jobs:
           git clone --depth 1 "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
           git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
-          git checkout -C patches ${APPLE_SMC_DRIVER_COMMIT_HASH}
+          git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
       - name: Patch kernel
         id: patch_kernel
         run: |
