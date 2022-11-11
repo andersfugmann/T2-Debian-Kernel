@@ -45,10 +45,12 @@ jobs:
           echo APPLE_SMC_DRIVER_COMMIT_HASH=${APPLE_SMC_DRIVER_COMMIT_HASH} >> build_params
 
           grep '^APPLE_BCE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+          source build_params
           git clone --depth 1 "${APPLE_BCE_REPOSITORY}" apple-bce
           echo APPLE_BCE_COMMIT_HASH=$(git -C apple-bce rev-parse HEAD)  >> build_params
 
           grep '^APPLE_IBRIDGE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+          source build_params
           git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" apple-ibridge
           echo APPLE_IBRIDGE_COMMIT_HASH=$(git -C apple-ibridge rev-parse HEAD)  >> build_params
 
