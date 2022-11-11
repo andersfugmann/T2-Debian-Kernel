@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Copy Debian Kernel config
-        id: copt_debian_kernel_config
+        id: copy_debian_kernel_config
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cat <<EOF > build.sh
