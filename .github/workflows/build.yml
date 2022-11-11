@@ -46,6 +46,11 @@ jobs:
           fi
           echo APPLE_SMC_DRIVER_COMMIT_HASH=${APPLE_SMC_DRIVER_COMMIT_HASH} >> build_params
 
+          git clone --depth 1 "${APPLE_BCE_REPOSITORY}" apple-bce
+          echo APPLE_BCE_COMMIT_HASH=$(git -C apple-bce rev-parse HEAD)  >> build_params
+          git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" apple-ibridge
+          echo APPLE_IBRIDGE_COMMIT_HASH=$(git -C apple-ibridge rev-parse HEAD)  >> build_params
+
           echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
           echo "Build parameters: " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -139,8 +144,11 @@ jobs:
 
       - name: Get repositories
         run: |
-          git clone --depth 1 "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
-          git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
+          git clone "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
+          git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
+          git clone "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
+          git -C "${KERNEL_PATH}/drivers/staging/apple-ibridge" checkout ${APPLE_IBRIDGE_COMMIT_HASH}
+
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
           git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
       - name: Patch kernel
