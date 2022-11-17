@@ -49,11 +49,6 @@ jobs:
           git clone --depth 1 "${APPLE_BCE_REPOSITORY}" apple-bce
           echo APPLE_BCE_COMMIT_HASH=$(git -C apple-bce rev-parse HEAD)  >> build_params
 
-          grep '^APPLE_IBRIDGE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
-          source build_params
-          git clone --depth 1 "${APPLE_IBRIDGE_REPOSITORY}" apple-ibridge
-          echo APPLE_IBRIDGE_COMMIT_HASH=$(git -C apple-ibridge rev-parse HEAD)  >> build_params
-
           echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
           echo "Build parameters: " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -149,18 +144,14 @@ jobs:
         run: |
           git clone "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
           git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
-          git clone "${APPLE_IBRIDGE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-ibridge"
-          git -C "${KERNEL_PATH}/drivers/staging/apple-ibridge" checkout ${APPLE_IBRIDGE_COMMIT_HASH}
-
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
           git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
       - name: Patch kernel
         id: patch_kernel
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
-          rm -vf patches/100*.patch
-          rm -vf patches/000*.patch
-          cp -v T2-Ubuntu-Kernel/patches/*.patch patches
+          rm -vf patches/1001*.patch
+          cp -v T2-Ubuntu-Kernel/patches/*.patch patches || true
           cd ${KERNEL_PATH}
           echo "Applying patches" >> $GITHUB_STEP_SUMMARY
           while read -r file; do
@@ -181,8 +172,9 @@ jobs:
           cd ${KERNEL_PATH}
           ./scripts/config --module CONFIG_BT_HCIBCM4377
           ./scripts/config --module CONFIG_APPLE_BCE
-          ./scripts/config --module CONFIG_APPLE_IBRIDGE
-
+          ./scripts/config --module CONFIG_HID_APPLE_IBRIDGE
+          ./scripts/config --module CONFIG_HID_APPLE_TOUCHBAR
+          ./scripts/config --module CONFIG_HID_APPLE_MAGIC_BACKLIGHT
           # Only support intel cpu
           ./scripts/config --disable CONFIG_GENERIC_CPU
           ./scripts/config --enable CONFIG_PROCESSOR_SELECT
