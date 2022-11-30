@@ -16,7 +16,7 @@ set of debian packages.
 Firstly add the **t2-ubuntu-repo** apt repo
 
 ```bash
-curl -s --compressed "https://adityagarg8.github.io/t2-ubuntu-repo/key.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/t2-ubuntu-repo.gpg >/dev/null
+curl -s --compressed "https://adityagarg8.github.io/t2-ubuntu-repo/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/t2-ubuntu-repo.gpg >/dev/null
 sudo curl -s --compressed -o /etc/apt/sources.list.d/t2.list "https://adityagarg8.github.io/t2-ubuntu-repo/t2.list"
 sudo apt update
 ```
@@ -33,7 +33,7 @@ Whenever you wish to upgrade your kernel, run:
 update_t2_kernel
 ```
 
-**note :-** By default, whenever you run `update_t2_kernel`, the script installs the latest kernel (lts or mainline, depending on your script) as well as preserves the kernel which is booted during running of the script. Rest all old t2 kernels get removed (self compiled and official Debian kernels are not affected). In case you wish to remove the kernel which is booted as well, run `update_t2_kernel --remove-current`.
+**Note :-** By default, whenever you run `update_t2_kernel`, the script installs the latest kernel as well as preserves the kernel which is booted during running of the script. Rest all old t2 kernels get removed (self compiled and official Debian kernels are not affected). In case you wish to remove the kernel which is booted as well, run `update_t2_kernel --remove-current`.
 
 ### Download package manually
 
