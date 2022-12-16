@@ -49,6 +49,9 @@ jobs:
           git clone --depth 1 "${APPLE_BCE_REPOSITORY}" apple-bce
           echo APPLE_BCE_COMMIT_HASH=$(git -C apple-bce rev-parse HEAD)  >> build_params
 
+          git clone --depth 1 https://github.com/Redecorating/apple-gmux-t2.git
+          echo APPLE_GMUX_T2_COMMIT_HASH=$(git -C apple-gmux-t2 rev-parse HEAD) >> build_params
+
           echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
           echo "Build parameters: " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -146,6 +149,9 @@ jobs:
           git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
           git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
+          git clone https://github.com/Redecorating/apple-gmux-t2.git "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
+          git -C "${KERNEL_PATH}/drivers/staging/apple-gmux-t2" checkout ${APPLE_GMUX_T2_COMMIT_HASH}
+
       - name: Patch kernel
         id: patch_kernel
         run: |
@@ -175,6 +181,9 @@ jobs:
           ./scripts/config --module CONFIG_HID_APPLE_IBRIDGE
           ./scripts/config --module CONFIG_HID_APPLE_TOUCHBAR
           ./scripts/config --module CONFIG_HID_APPLE_MAGIC_BACKLIGHT
+          ./scripts/config --enable CONFIG_IRQ_REMAP
+          ./scripts/config --module CONFIG_HID_APPLE
+
           # Only support intel cpu
           ./scripts/config --disable CONFIG_GENERIC_CPU
           ./scripts/config --enable CONFIG_PROCESSOR_SELECT
