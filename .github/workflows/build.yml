@@ -147,8 +147,10 @@ jobs:
         run: |
           git clone "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
           git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
+
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
           git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
+
           git clone https://github.com/Redecorating/apple-gmux-t2.git "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
           git -C "${KERNEL_PATH}/drivers/staging/apple-gmux-t2" checkout ${APPLE_GMUX_T2_COMMIT_HASH}
 
@@ -164,6 +166,9 @@ jobs:
             echo " * $(basename $file)" >> $GITHUB_STEP_SUMMARY
             patch -p1 < "$file"
           done < <(find "${GITHUB_WORKSPACE}/patches" -type f -name "*.patch" | sort)
+
+          # Add GMUX driver in staging
+          echo "obj-m += apple-gmux-t2/" >> ${KERNEL_PATH}/drivers/staging/Makefile
 
       - name: Get Debian kernel config
         uses: actions/download-artifact@v3
@@ -181,6 +186,11 @@ jobs:
           ./scripts/config --module CONFIG_HID_APPLE_IBRIDGE
           ./scripts/config --module CONFIG_HID_APPLE_TOUCHBAR
           ./scripts/config --module CONFIG_HID_APPLE_MAGIC_BACKLIGHT
+
+          # Disable built in GMUX
+          ./scripts/config --disable CONFIG_APPLE_GMUX
+
+          # Required by APPLE_BCE. This should already be set.
           ./scripts/config --enable CONFIG_IRQ_REMAP
           ./scripts/config --module CONFIG_HID_APPLE
 
