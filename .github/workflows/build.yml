@@ -49,7 +49,9 @@ jobs:
           git clone --depth 1 "${APPLE_BCE_REPOSITORY}" apple-bce
           echo APPLE_BCE_COMMIT_HASH=$(git -C apple-bce rev-parse HEAD)  >> build_params
 
-          git clone --depth 1 https://github.com/Redecorating/apple-gmux-t2.git
+          APPLE_GMUX_T2_REPOSITORY="https://github.com/Redecorating/apple-gmux-t2.git"
+          echo APPLE_GMUX_T2_REPOSITORY=${APPLE_GMUX_T2_REPOSITORY} >> build_params
+          git clone --depth 1 $APPLE_GMUX_T2_REPOSITORY
           echo APPLE_GMUX_T2_COMMIT_HASH=$(git -C apple-gmux-t2 rev-parse HEAD) >> build_params
 
           echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
@@ -151,7 +153,7 @@ jobs:
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
           git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
 
-          git clone https://github.com/Redecorating/apple-gmux-t2.git "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
+          git clone ${APPLE_GMUX_T2_REPOSITORY} "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
           git -C "${KERNEL_PATH}/drivers/staging/apple-gmux-t2" checkout ${APPLE_GMUX_T2_COMMIT_HASH}
 
       - name: Patch kernel
