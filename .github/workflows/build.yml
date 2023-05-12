@@ -161,11 +161,11 @@ jobs:
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           rm -vf patches/1001*.patch
-          cp -v T2-Ubuntu-Kernel/patches/*.patch patches || true
+          cp -v T2-Ubuntu-Kernel/patches/*.patch patches 2>/dev/null || true
           cd ${KERNEL_PATH}
-          echo "Applying patches" >> $GITHUB_STEP_SUMMARY
+          echo "Applying patches" | tee -a $GITHUB_STEP_SUMMARY
           while read -r file; do
-            echo " * $(basename $file)" >> $GITHUB_STEP_SUMMARY
+            echo " * $(basename $file)" | tee -a $GITHUB_STEP_SUMMARY
             patch -p1 < "$file"
           done < <(find "${GITHUB_WORKSPACE}/patches" -type f -name "*.patch" | sort)
 
