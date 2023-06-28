@@ -224,7 +224,7 @@ jobs:
 
       - name: Free up disk space
         id: free_space
-        if: false
+        #if: false
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
 
