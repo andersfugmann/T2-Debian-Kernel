@@ -100,8 +100,9 @@ jobs:
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cat <<EOF > build.sh
           #!/bin/bash -ex
+            echo "deb http://ftp.debian.org/debian/ experimental main non-free non-free-firmware contrib" >> /etc/apt/sources.list.d/experimental.list
             apt -q update
-            apt -q install -y linux-image-amd64
+            apt -q install -t experimental -y linux-image-amd64
             CONFIG=\$(ls /boot/config-*-amd64 | sort | tail -n 1)
             cp -v \${CONFIG} /workspace/debian_kernel_config
           EOF
@@ -147,8 +148,8 @@ jobs:
 
       - name: Get repositories
         run: |
-          git clone "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
-          git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
+          #git clone "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
+          #git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
 
           git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
           git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
