@@ -161,7 +161,7 @@ jobs:
         id: patch_kernel
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
-          #rm -vf patches/1001*.patch
+          rm -vf patches/2010*.patch
           cp -v T2-Ubuntu-Kernel/patches/*.patch patches 2>/dev/null || true
           cd ${KERNEL_PATH}
           echo "Applying patches" | tee -a $GITHUB_STEP_SUMMARY
