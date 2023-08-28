@@ -319,6 +319,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  cleanup_releases:
+    name: Cleanup old releases
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: Nats-ji/delete-old-releases@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        keep-count: 3
+        keep-old-minor-releases: true
+        keep-old-minor-releases-count: 1
+        remove-tags: true
+        dry-run: false
+
   skip_build:
     name: Skip build
     needs: extract_params
