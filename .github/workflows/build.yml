@@ -190,6 +190,7 @@ jobs:
           ./scripts/config --module CONFIG_HID_APPLE_TOUCHBAR
           ./scripts/config --module CONFIG_HID_APPLE_MAGIC_BACKLIGHT
 
+
           # Disable built in GMUX
           ./scripts/config --module CONFIG_APPLE_GMUX
 
@@ -212,6 +213,60 @@ jobs:
           ./scripts/config --disable CONFIG_PERF_EVENTS_AMD_UNCORE
           ./scripts/config --disable CONFIG_MICROCODE_AMD
           ./scripts/config --disable CONFIG_AMD_MEM_ENCRYPT
+
+          # Generic changes to mimic ubuntu
+          ./scripts/config --disable CONFIG_GENERIC_IRQ_INJECTION
+          ./scripts/config --disable CONFIG_CONTEXT_TRACKING_USER
+          ./scripts/config --enable CONFIG_IRQ_SIM
+          ./scripts/config --disable CONFIG_NO_HZ_FULL
+          ./scripts/config --enable CONFIG_NO_HZ_IDLE
+          ./scripts/config --enable CONFIG_NO_HZ=y
+          ./scripts/config --disable CONFIG_CONTEXT_TRACKING_USER
+          ./scripts/config --enable CONFIG_USERMODE_DRIVER
+          ./scripts/config --enable CONFIG_SCHED_CORE
+          ./scripts/config --enable CONFIG_UCLAMP_TASK
+          ./scripts/config --set-val CONFIG_UCLAMP_BUCKETS_COUNT 5
+          ./scripts/config --enable CONFIG_UCLAMP_TASK_GROUP
+          ./scripts/config --enable CONFIG_BOOT_CONFIG
+          ./scripts/config --enable CONFIG_X86_EXTENDED_PLATFORM
+          ./scripts/config --enable CONFIG_X86_NUMACHIP
+          ./scripts/config --enable CONFIG_X86_UV
+          ./scripts/config --enable CONFIG_GART_IOMMU
+          ./scripts/config --enable CONFIG_X86_MCELOG_LEGACY
+          ./scripts/config --enable CONFIG_ARCH_MEMORY_PROBE
+          ./scripts/config --enable CONFIG_X86_PMEM_LEGACY
+          ./scripts/config --enable CONFIG_X86_CHECK_BIOS_CORRUPTION
+          ./scripts/config --enable CONFIG_X86_BOOTPARAM_MEMORY_CORRUPTION_CHECK
+          ./scripts/config --enable CONFIG_MTRR_SANITIZER_ENABLE_DEFAULT
+          ./scripts/config --enable CONFIG_CPU_UNRET_ENTRY
+          ./scripts/config --enable CONFIG_CPU_SRSO
+          ./scripts/config --enable CONFIG_PM_WAKELOCKS
+          ./scripts/config --enable CONFIG_PCIE_EDR
+          ./scripts/config --set-val CONFIG_PM_WAKELOCKS_LIMIT 100
+          ./scripts/config --enable CONFIG_PM_WAKELOCKS_GC
+          ./scripts/config --enable CONFIG_WQ_POWER_EFFICIENT_DEFAULT
+          ./scripts/config --module CONFIG_ACPI_AC
+          ./scripts/config --module CONFIG_ACPI_BATTERY
+          ./scripts/config --module CONFIG_ACPI_BUTTON
+          ./scripts/config --enable CONFIG_ACPI_DPTF
+          ./scripts/config --module CONFIG_DPTF_POWER
+          ./scripts/config --module CONFIG_DPTF_PCH_FIVR
+          ./scripts/config --enable CONFIG_TPS68470_PMIC_OPREGION
+          ./scripts/config --enable CONFIG_ACPI_VIOT
+          ./scripts/config --enable CONFIG_CPU_IDLE_GOV_TEO
+          ./scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE_MADVISE
+          ./scripts/config --disable CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS
+          ./scripts/config --enable CONFIG_PAGE_IDLE_FLAG
+          ./scripts/config --enable CONFIG_IDLE_PAGE_TRACKING
+          ./scripts/config --enable CONFIG_DEVICE_PRIVATE
+          ./scripts/config --enable CONFIG_SOC_BUS
+          ./scripts/config --enable CONFIG_REGMAP_SPI=y
+          ./scripts/config --enable CONFIG_EFI_RCI2_TABLE=y
+          ./scripts/config --enable CONFIG_EFI_COCO_SECRET=y
+          ./scripts/config --module CONFIG_THUNDER_NIC_PF
+          ./scripts/config --module CONFIG_THUNDER_NIC_VF
+          ./scripts/config --module CONFIG_THUNDER_NIC_BGX
+          ./scripts/config --module CONFIG_THUNDER_NIC_RGX
 
           cp .config ../t2_kernel_config
 
