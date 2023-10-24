@@ -13,9 +13,17 @@ on:
         description: 'Force kernel build and release'
         required: true
         type: boolean
+      use_local_patches:
+        description: 'Use local patches'
+        required: true
+        type: boolean
+      patch_release_version:
+        description: 'Local patch release version'
+        required: false
+        type: number
+
   schedule:
     - cron: '0 */6 * * *'
-
 
 jobs:
   extract_params:
@@ -29,9 +37,17 @@ jobs:
         id: fetch
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
+          echo "inputs.force_build: ${{ inputs.force_build }}" >> $GITHUB_STEP_SUMMARY
+          echo "inputs.use_local_patches: ${{ inputs.use_local_patches }}" >> $GITHUB_STEP_SUMMARY
+          echo "inputs.patch_release_version: ${{ inputs.patch_release_version }}" >> $GITHUB_STEP_SUMMARY
+
           git clone --depth 1 https://github.com/t2linux/T2-Ubuntu-Kernel.git
           grep '^KERNEL_VERSION=' T2-Ubuntu-Kernel/build.sh | head -n 1 > build_params
-          grep '^PKGREL=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+          if [ -n "${{ inputs.patch_release_version }}" ]; then
+            echo "PKGREL=${{ inputs.patch_release_version }}" >> build_params
+          else
+            grep '^PKGREL=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
+          fi
 
           grep '^APPLE_SMC_DRIVER_GIT_URL=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
           grep '^APPLE_SMC_DRIVER_BRANCH_NAME=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
@@ -55,6 +71,7 @@ jobs:
           #echo APPLE_GMUX_T2_COMMIT_HASH=$(git -C apple-gmux-t2 rev-parse HEAD) >> build_params
 
           echo "patch_sha=$(sha256sum T2-Ubuntu-Kernel/patches/*.patch | sha256sum | cut -d' ' -f 1)" >> build_params
+
           echo "Build parameters: " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat build_params >> $GITHUB_STEP_SUMMARY
@@ -157,12 +174,20 @@ jobs:
           #git clone ${APPLE_GMUX_T2_REPOSITORY} "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
           #git -C "${KERNEL_PATH}/drivers/staging/apple-gmux-t2" checkout ${APPLE_GMUX_T2_COMMIT_HASH}
 
+          if [ "${{ inputs.use_local_patches }}" = "true" ]; then
+            git clone https://github.com/andersfugmann/T2-Debian-Kernel.git local_patches
+          fi
+
+
       - name: Patch kernel
         id: patch_kernel
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           rm -vf patches/2010*.patch
           cp -v T2-Ubuntu-Kernel/patches/*.patch patches 2>/dev/null || true
+          if [ "${{ inputs.use_local_patches }}" = "true" ]; then
+            cp -v local_patches/patches/*.patch patches
+          fi
           cd ${KERNEL_PATH}
           echo "Applying patches" | tee -a $GITHUB_STEP_SUMMARY
           while read -r file; do
