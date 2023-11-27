@@ -183,7 +183,6 @@ jobs:
         id: patch_kernel
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
-          rm -vf patches/2010*.patch
           cp -v T2-Ubuntu-Kernel/patches/*.patch patches 2>/dev/null || true
           if [ "${{ inputs.use_local_patches }}" = "true" ]; then
             cp -v local_patches/patches/*.patch patches
