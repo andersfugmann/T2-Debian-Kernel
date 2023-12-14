@@ -303,6 +303,30 @@ jobs:
           path: |
             t2_kernel_config
 
+      - name: Create kernel certs
+        run: |
+          cd /tmp
+          echo "[ req ]" > x509.genkey
+          echo "default_bits = 4096" >> x509.genkey
+          echo "distinguished_name = req_distinguished_name" >> x509.genkey
+          echo "prompt = no" >> x509.genkey
+          echo "x509_extensions = myexts" >> x509.genkey
+          echo "" >> x509.genkey
+
+          echo "[ req_distinguished_name ]" >> x509.genkey
+          echo "CN = Modules" >> x509.genkey
+          echo "" >> x509.genkey
+
+          echo "[ myexts ]" >> x509.genkey
+          echo "basicConstraints=critical,CA:FALSE" >> x509.genkey
+          echo "keyUsage=digitalSignature" >> x509.genkey
+          echo "subjectKeyIdentifier=hash" >> x509.genkey
+          echo "authorityKeyIdentifier=keyid" >> x509.genkey
+
+          openssl req -new -nodes -utf8 -sha512 -days 36500 -batch -x509 -config x509.genkey -outform DER -out signing_key.x509 -keyout signing_key.pem
+
+          mv signing_key.pem signing_key.x509 ${KERNEL_PATH}/certs
+
       - name: Free up disk space
         id: free_space
         #if: false
