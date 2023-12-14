@@ -314,7 +314,7 @@ jobs:
           df -h >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-          sudo apt -q remove dotnet\* php\* python\* mono\* aspnet\* clang\* java\* ant openjdk\* -y
+          sudo apt -q remove dotnet\* php\* mono\* aspnet\* clang\* java\* ant openjdk\* -y
           sudo apt -q autoremove -y
           sudo rm -fr /usr/local/lib/android
 
