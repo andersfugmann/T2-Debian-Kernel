@@ -293,7 +293,6 @@ jobs:
           ./scripts/config --module CONFIG_THUNDER_NIC_VF
           ./scripts/config --module CONFIG_THUNDER_NIC_BGX
           ./scripts/config --module CONFIG_THUNDER_NIC_RGX
-          ./scripts/config --set-val CONFIG_MODULE_SIG_KEY "certs/signing_key.pem"
           cp .config ../t2_kernel_config
 
       - name: Upload kernel config
@@ -330,7 +329,7 @@ jobs:
           DEBIAN_PACKAGES: >
             build-essential debhelper
             bc rsync kmod cpio bison flex libelf-dev libssl-dev pahole
-            python3-minimal
+            python3-minimal ca-certificates openssl
 
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
@@ -338,6 +337,7 @@ jobs:
           #!/bin/bash -ex
           apt -q update
           apt -q install -y ${DEBIAN_PACKAGES}
+          apt -q build-dep -y linux-image-amd64
           apt -q autoclean
 
           make -C /workspace/linux-${KERNEL_VERSION} olddefconfig
