@@ -13,8 +13,8 @@ on:
         description: 'Force kernel build and release'
         required: true
         type: boolean
-      use_local_patches:
-        description: 'Use local patches'
+      disable_local_patches:
+        description: 'Disable Use of local patches'
         required: true
         type: boolean
       patch_release_version:
@@ -38,7 +38,7 @@ jobs:
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           echo "inputs.force_build: ${{ inputs.force_build }}" >> $GITHUB_STEP_SUMMARY
-          echo "inputs.use_local_patches: ${{ inputs.use_local_patches }}" >> $GITHUB_STEP_SUMMARY
+          echo "inputs.disable_local_patches: ${{ inputs.disable_local_patches }}" >> $GITHUB_STEP_SUMMARY
           echo "inputs.patch_release_version: ${{ inputs.patch_release_version }}" >> $GITHUB_STEP_SUMMARY
 
           git clone --depth 1 https://github.com/t2linux/T2-Ubuntu-Kernel.git
@@ -174,7 +174,7 @@ jobs:
           #git clone ${APPLE_GMUX_T2_REPOSITORY} "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
           #git -C "${KERNEL_PATH}/drivers/staging/apple-gmux-t2" checkout ${APPLE_GMUX_T2_COMMIT_HASH}
 
-          if [ "${{ inputs.use_local_patches }}" = "true" ]; then
+          if [ ! "${{ inputs.disable_local_patches }}" = "true" ]; then
             git clone https://github.com/andersfugmann/T2-Debian-Kernel.git local_patches
           fi
 
@@ -184,7 +184,7 @@ jobs:
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cp -v T2-Ubuntu-Kernel/patches/*.patch patches 2>/dev/null || true
-          if [ "${{ inputs.use_local_patches }}" = "true" ]; then
+          if [ ! "${{ inputs.disable_local_patches }}" = "true" ]; then
             cp -v local_patches/patches/*.patch patches
           fi
           cd ${KERNEL_PATH}
@@ -293,6 +293,7 @@ jobs:
           ./scripts/config --module CONFIG_THUNDER_NIC_VF
           ./scripts/config --module CONFIG_THUNDER_NIC_BGX
           ./scripts/config --module CONFIG_THUNDER_NIC_RGX
+          ./scripts/config --disable CONFIG_MODULE_SIG
           cp .config ../t2_kernel_config
 
       - name: Upload kernel config
