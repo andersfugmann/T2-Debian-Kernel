@@ -286,14 +286,14 @@ jobs:
           ./scripts/config --enable CONFIG_IDLE_PAGE_TRACKING
           ./scripts/config --enable CONFIG_DEVICE_PRIVATE
           ./scripts/config --enable CONFIG_SOC_BUS
-          ./scripts/config --enable CONFIG_REGMAP_SPI=y
-          ./scripts/config --enable CONFIG_EFI_RCI2_TABLE=y
-          ./scripts/config --enable CONFIG_EFI_COCO_SECRET=y
+          ./scripts/config --enable CONFIG_REGMAP_SPI
+          ./scripts/config --enable CONFIG_EFI_RCI2_TABLE
+          ./scripts/config --enable CONFIG_EFI_COCO_SECRET
           ./scripts/config --module CONFIG_THUNDER_NIC_PF
           ./scripts/config --module CONFIG_THUNDER_NIC_VF
           ./scripts/config --module CONFIG_THUNDER_NIC_BGX
           ./scripts/config --module CONFIG_THUNDER_NIC_RGX
-          ./scripts/config --disable CONFIG_MODULE_SIG
+          ./scripts/config --set-val CONFIG_MODULE_SIG n
           cp .config ../t2_kernel_config
 
       - name: Upload kernel config
@@ -330,7 +330,8 @@ jobs:
           DEBIAN_PACKAGES: >
             build-essential debhelper
             bc rsync kmod cpio bison flex libelf-dev libssl-dev pahole
-            python3-minimal ca-certificates openssl dh-exec
+            python3-minimal ca-certificates dh-exec openssl
+            libncurses5-dev dwarves
 
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
