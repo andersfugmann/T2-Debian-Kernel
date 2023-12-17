@@ -294,6 +294,7 @@ jobs:
           ./scripts/config --module CONFIG_THUNDER_NIC_BGX
           ./scripts/config --module CONFIG_THUNDER_NIC_RGX
           ./scripts/config --set-val CONFIG_MODULE_SIG n
+          ./scripts/config --set-val CONFIG_MODULE_SIG_ALL n
           cp .config ../t2_kernel_config
 
       - name: Upload kernel config
@@ -355,6 +356,11 @@ jobs:
           chmod +x build.sh
           docker pull ${DOCKER_IMAGE}
           docker run -t -v "$(pwd):/workspace" ${DOCKER_IMAGE} /bin/bash -c /workspace/build.sh
+          res=$?
+          ls -l ${KERNEL_PATH}/certs
+          exit $res
+
+
 
       - name: Prepare Release
         run: |
