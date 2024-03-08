@@ -187,6 +187,11 @@ jobs:
           if [ ! "${{ inputs.disable_local_patches }}" = "true" ]; then
             cp -v local_patches/patches/*.patch patches
           fi
+          ## Remove empty patches
+          for f in patches/*patch; do
+            [ -s $f ] || (echo remove empty patch $f; rm -f $f)
+          done
+
           cd ${KERNEL_PATH}
           echo "Applying patches" | tee -a $GITHUB_STEP_SUMMARY
           while read -r file; do
