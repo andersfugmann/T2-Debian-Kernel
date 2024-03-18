@@ -23,7 +23,7 @@ on:
         type: number
 
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 06 * * *'
 
 jobs:
   extract_params:
