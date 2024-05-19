@@ -49,16 +49,16 @@ jobs:
             grep '^PKGREL=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
           fi
 
-          grep '^APPLE_SMC_DRIVER_GIT_URL=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
-          grep '^APPLE_SMC_DRIVER_BRANCH_NAME=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
+          grep '^T2_PATCHES_GIT_URL=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
+          grep '^T2_PATCHES_BRANCH_NAME=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 >> build_params
 
-          APPLE_SMC_DRIVER_COMMIT_HASH=$(grep '^APPLE_SMC_DRIVER_COMMIT_HASH=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 | cut -d'=' -f2)
-          if [ "${APPLE_SMC_DRIVER_COMMIT_HASH}" = "HEAD" ]; then
+          T2_PATCHES_COMMIT_HASH=$(grep '^T2_PATCHES_COMMIT_HASH=' T2-Ubuntu-Kernel/patch_driver.sh | head -n 1 | cut -d'=' -f2)
+          if [ "${T2_PATCHES_COMMIT_HASH}" = "HEAD" ]; then
             source build_params
-            git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
-            APPLE_SMC_DRIVER_COMMIT_HASH=$(git -C patches rev-parse HEAD)
+            git clone --single-branch --branch ${T2_PATCHES_BRANCH_NAME} ${T2_PATCHES_GIT_URL} patches
+            T2_PATCHES_COMMIT_HASH=$(git -C patches rev-parse HEAD)
           fi
-          echo APPLE_SMC_DRIVER_COMMIT_HASH=${APPLE_SMC_DRIVER_COMMIT_HASH} >> build_params
+          echo T2_PATCHES_COMMIT_HASH=${T2_PATCHES_COMMIT_HASH} >> build_params
 
           #grep '^APPLE_BCE_REPOSITORY=' T2-Ubuntu-Kernel/build.sh | head -n 1 >> build_params
           source build_params
@@ -168,8 +168,8 @@ jobs:
           #git clone "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
           #git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
 
-          git clone --single-branch --branch ${APPLE_SMC_DRIVER_BRANCH_NAME} ${APPLE_SMC_DRIVER_GIT_URL} patches
-          git -C patches checkout ${APPLE_SMC_DRIVER_COMMIT_HASH}
+          git clone --single-branch --branch ${T2_PATCHES_BRANCH_NAME} ${T2_PATCHES_GIT_URL} patches
+          git -C patches checkout ${T2_PATCHES_COMMIT_HASH}
 
           #git clone ${APPLE_GMUX_T2_REPOSITORY} "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
           #git -C "${KERNEL_PATH}/drivers/staging/apple-gmux-t2" checkout ${APPLE_GMUX_T2_COMMIT_HASH}
