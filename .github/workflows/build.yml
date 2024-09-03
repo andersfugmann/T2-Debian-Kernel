@@ -147,7 +147,7 @@ jobs:
 
     steps:
       - name: Get Build Parameters
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: build-params
 
@@ -203,7 +203,7 @@ jobs:
           #echo "obj-m += apple-gmux-t2/" >> ${KERNEL_PATH}/drivers/staging/Makefile
 
       - name: Get Debian kernel config
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: debian-kernel-config
 
@@ -402,7 +402,7 @@ jobs:
     needs: [extract_params, build]
     steps:
       - name: Get Build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: build_artifacts
 
