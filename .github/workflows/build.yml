@@ -165,14 +165,8 @@ jobs:
 
       - name: Get repositories
         run: |
-          #git clone "${APPLE_BCE_REPOSITORY}" "${KERNEL_PATH}/drivers/staging/apple-bce"
-          #git -C "${KERNEL_PATH}/drivers/staging/apple-bce" checkout ${APPLE_BCE_COMMIT_HASH}
-
           git clone --single-branch --branch ${T2_PATCHES_BRANCH_NAME} ${T2_PATCHES_GIT_URL} patches
           git -C patches checkout ${T2_PATCHES_COMMIT_HASH}
-
-          #git clone ${APPLE_GMUX_T2_REPOSITORY} "${KERNEL_PATH}/drivers/staging/apple-gmux-t2"
-          #git -C "${KERNEL_PATH}/drivers/staging/apple-gmux-t2" checkout ${APPLE_GMUX_T2_COMMIT_HASH}
 
           if [ ! "${{ inputs.disable_local_patches }}" = "true" ]; then
             git clone https://github.com/andersfugmann/T2-Debian-Kernel.git local_patches
@@ -189,7 +183,7 @@ jobs:
           fi
           ## Remove empty patches
           for f in patches/*patch; do
-            [ -s $f ] || (echo remove empty patch $f; rm -f $f)
+            [ -s $f ] || (echo "remove empty patch $f" >> $GITHUB_STEP_SUMMARY; rm -f $f)
           done
 
           cd ${KERNEL_PATH}
@@ -199,8 +193,6 @@ jobs:
             patch -p1 < "$file"
           done < <(find "${GITHUB_WORKSPACE}/patches" -type f -name "*.patch" | sort)
 
-          # Add GMUX driver in staging
-          #echo "obj-m += apple-gmux-t2/" >> ${KERNEL_PATH}/drivers/staging/Makefile
 
       - name: Get Debian kernel config
         uses: actions/download-artifact@v4
