@@ -179,10 +179,11 @@ jobs:
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cp -v T2-Ubuntu-Kernel/patches/*.patch patches 2>/dev/null || true
           if [ ! "${{ inputs.disable_local_patches }}" = "true" ]; then
-            cp -v local_patches/patches/*.patch patches
+            cp -v local_patches/patches/*.patch patches 2>/dev/null || true
           fi
           ## Remove empty patches
           for f in patches/*patch; do
+            echo "Patch: $f" >> $GITHUB_STEP_SUMMARY
             [ -s $f ] || (echo "remove empty patch $f" >> $GITHUB_STEP_SUMMARY; rm -f $f)
           done
 
