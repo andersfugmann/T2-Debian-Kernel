@@ -78,7 +78,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Store build params
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-params
           path: |
@@ -134,7 +134,7 @@ jobs:
           docker run -t -v "$(pwd):/workspace" debian:unstable /bin/bash -c /workspace/build.sh
 
       - name: Upload kernel config
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: debian-kernel-config
           path: |
@@ -147,7 +147,7 @@ jobs:
 
     steps:
       - name: Get Build Parameters
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: build-params
 
@@ -203,7 +203,7 @@ jobs:
           #echo "obj-m += apple-gmux-t2/" >> ${KERNEL_PATH}/drivers/staging/Makefile
 
       - name: Get Debian kernel config
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: debian-kernel-config
 
@@ -314,7 +314,7 @@ jobs:
           cp .config ../t2_kernel_config
 
       - name: Upload kernel config
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: t2-kernel-config
           path: |
@@ -386,7 +386,7 @@ jobs:
           sha256sum *deb > sha256
 
       - name: Store Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build_artifacts
           path: |
@@ -402,7 +402,7 @@ jobs:
     needs: [extract_params, build]
     steps:
       - name: Get Build artifacts
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: build_artifacts
 
