@@ -191,7 +191,7 @@ jobs:
           echo "Applying patches" | tee -a $GITHUB_STEP_SUMMARY
           while read -r file; do
             echo " * $(basename $file)" | tee -a $GITHUB_STEP_SUMMARY
-            patch -p1 < "$file"
+            (patch -p1 --dry-run < "$file" && patch -p1 < "$file") || echo "Failed to apply patch: $f" >> $GITHUB_STEP_SUMMARY
           done < <(find "${GITHUB_WORKSPACE}/patches" -type f -name "*.patch" | sort)
 
 
