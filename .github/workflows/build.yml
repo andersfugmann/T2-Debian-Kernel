@@ -13,7 +13,7 @@ on:
         description: 'Force kernel build and release'
         required: true
         type: boolean
-      disable_local_patches:
+      use_local_patches:
         description: 'Disable Use of local patches'
         required: true
         type: boolean
@@ -38,7 +38,7 @@ jobs:
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           echo "inputs.force_build: ${{ inputs.force_build }}" >> $GITHUB_STEP_SUMMARY
-          echo "inputs.disable_local_patches: ${{ inputs.disable_local_patches }}" >> $GITHUB_STEP_SUMMARY
+          echo "inputs.use_local_patches: ${{ inputs.use_local_patches }}" >> $GITHUB_STEP_SUMMARY
           echo "inputs.patch_release_version: ${{ inputs.patch_release_version }}" >> $GITHUB_STEP_SUMMARY
 
           git clone --depth 1 https://github.com/t2linux/T2-Ubuntu-Kernel.git
@@ -168,7 +168,7 @@ jobs:
           git clone --single-branch --branch ${T2_PATCHES_BRANCH_NAME} ${T2_PATCHES_GIT_URL} patches
           git -C patches checkout ${T2_PATCHES_COMMIT_HASH}
 
-          if [ ! "${{ inputs.disable_local_patches }}" = "true" ]; then
+          if [ "${{ inputs.use_local_patches }}" = "true" ]; then
             git clone https://github.com/andersfugmann/T2-Debian-Kernel.git local_patches
           fi
 
@@ -178,7 +178,7 @@ jobs:
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cp -v T2-Ubuntu-Kernel/patches/*.patch patches 2>/dev/null || true
-          if [ ! "${{ inputs.disable_local_patches }}" = "true" ]; then
+          if [ "${{ inputs.use_local_patches }}" = "true" ]; then
             cp -v local_patches/patches/*.patch patches 2>/dev/null || true
           fi
           ## Remove empty patches
