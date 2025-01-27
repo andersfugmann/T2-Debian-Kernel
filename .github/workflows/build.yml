@@ -244,7 +244,7 @@ jobs:
           ./scripts/config --enable CONFIG_IRQ_SIM
           ./scripts/config --disable CONFIG_NO_HZ_FULL
           ./scripts/config --enable CONFIG_NO_HZ_IDLE
-          ./scripts/config --enable CONFIG_NO_HZ=y
+          ./scripts/config --enable CONFIG_NO_HZ
           ./scripts/config --disable CONFIG_CONTEXT_TRACKING_USER
           ./scripts/config --enable CONFIG_USERMODE_DRIVER
           ./scripts/config --enable CONFIG_SCHED_CORE
@@ -261,7 +261,6 @@ jobs:
           ./scripts/config --enable CONFIG_X86_PMEM_LEGACY
           ./scripts/config --enable CONFIG_X86_CHECK_BIOS_CORRUPTION
           ./scripts/config --enable CONFIG_X86_BOOTPARAM_MEMORY_CORRUPTION_CHECK
-          ./scripts/config --enable CONFIG_MTRR_SANITIZER_ENABLE_DEFAULT
           ./scripts/config --enable CONFIG_CPU_UNRET_ENTRY
           ./scripts/config --enable CONFIG_CPU_SRSO
           ./scripts/config --enable CONFIG_PM_WAKELOCKS
@@ -325,7 +324,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
           sudo apt -q remove dotnet\* php\* mono\* aspnet\* clang\* java\* ant openjdk\* -y
-          sudo apt -q autoremove -y
+          sudo apt -q autopurge -y
           sudo rm -fr /usr/local/lib/android
 
           echo 'After: ' >> $GITHUB_STEP_SUMMARY
@@ -341,7 +340,7 @@ jobs:
             build-essential debhelper
             bc rsync kmod cpio bison flex libelf-dev libssl-dev pahole
             python3-minimal ca-certificates dh-exec openssl
-            libncurses5-dev dwarves
+            libncurses5-dev dwarves python3
 
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
@@ -368,8 +367,6 @@ jobs:
           res=$?
           ls -l ${KERNEL_PATH}/certs
           exit $res
-
-
 
       - name: Prepare Release
         run: |
