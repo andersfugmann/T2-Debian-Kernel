@@ -14,7 +14,7 @@ on:
         required: true
         type: boolean
       use_local_patches:
-        description: 'Disable Use of local patches'
+        description: 'Override patchset with local patches'
         required: true
         type: boolean
       patch_release_version:
