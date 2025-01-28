@@ -4407,7 +4407,7 @@ index 000000000..8226363d6
 +    spin_lock_irqsave(&q->urb_lock, flags);
 +    while (!list_empty(&q->evq)) {
 +        lm = list_first_entry(&q->evq, struct bce_vhci_list_message, list);
-+        list_del(&lm->list);
++        //list_del(&lm->list); // AFU
 +        kfree(lm);
 +    }
 +    spin_unlock_irqrestore(&q->urb_lock, flags);
@@ -4698,8 +4698,8 @@ index 000000000..8226363d6
 +
 +    vurb = urb->hcpriv;
 +    /* If the URB wasn't posted to the device yet, we can still remove it on the host without pausing the queue. */
-+    if (vurb->state != BCE_VHCI_URB_INIT_PENDING && false) {
-+        pr_debug("bce-vhci: [%02x] Cancelling URB\n", q->endp_addr);
++    if (vurb->state != BCE_VHCI_URB_INIT_PENDING) {
++        pr_info("bce-vhci: [%02x] Cancelling URB\n", q->endp_addr);
 +
 +        spin_unlock_irqrestore(&q->urb_lock, flags);
 +        bce_vhci_transfer_queue_pause(q, BCE_VHCI_PAUSE_INTERNAL_WQ);
@@ -4708,7 +4708,7 @@ index 000000000..8226363d6
 +        ++q->remaining_active_requests;
 +    }
 +
-+    usb_hcd_unlink_urb_from_ep(q->vhci->hcd, urb);
++    usb_hcd_unlink_urb_from_ep(q->vhci->hcd, urb); // This fails with '__list_del_entry_valid_or_report.cold'
 +
 +    spin_unlock_irqrestore(&q->urb_lock, flags);
 +
