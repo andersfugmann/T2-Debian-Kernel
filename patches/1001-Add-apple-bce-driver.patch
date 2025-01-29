@@ -4286,7 +4286,7 @@ new file mode 100644
 index 000000000..8226363d6
 --- /dev/null
 +++ b/drivers/staging/apple-bce/vhci/transfer.c
-@@ -0,0 +1,663 @@
+@@ -0,0 +1,664 @@
 +#include "transfer.h"
 +#include "../queue.h"
 +#include "vhci.h"
@@ -4405,13 +4405,14 @@ index 000000000..8226363d6
 +    unsigned long flags;
 +    struct bce_vhci_list_message *lm;
 +    spin_lock_irqsave(&q->urb_lock, flags);
++    INIT_LIST_HEAD(&q->evq);
++    /*
 +    while (!list_empty(&q->evq)) {
 +        lm = list_first_entry(&q->evq, struct bce_vhci_list_message, list);
 +        list_del(&lm->list);
 +        kfree(lm);
 +    }
-+    // Clear the list to be sure. We may want to do this earlier.
-+    INIT_LIST_HEAD(&q->evq);
++    */
 +    spin_unlock_irqrestore(&q->urb_lock, flags);
 +}
 +
