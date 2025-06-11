@@ -340,7 +340,7 @@ jobs:
             build-essential debhelper
             bc rsync kmod cpio bison flex libelf-dev libssl-dev pahole
             python3-minimal ca-certificates dh-exec openssl
-            libncurses5-dev dwarves python3 zstd
+            libncurses5-dev dwarves python3 zstd libdw-dev
 
         run: |
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
