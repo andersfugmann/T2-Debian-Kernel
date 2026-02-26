@@ -118,6 +118,7 @@ jobs:
           cat <<EOF > build.sh
           #!/bin/bash -ex
             echo "deb http://ftp.debian.org/debian/ experimental main non-free non-free-firmware contrib" >> /etc/apt/sources.list.d/experimental.list
+            export DEBIAN_FRONTEND=noninteractive
             apt -q update
             apt -q install -t experimental -y linux-image-amd64
             CONFIG=\$(ls /boot/config-*-amd64 | sort | tail -n 1)
@@ -323,6 +324,7 @@ jobs:
           df -h >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
+          export DEBIAN_FRONTEND=noninteractive
           sudo apt -q remove dotnet\* php\* mono\* aspnet\* clang\* java\* ant openjdk\* -y
           sudo apt -q autopurge -y
           sudo rm -fr /usr/local/lib/android
@@ -346,6 +348,7 @@ jobs:
           echo "#### Step: $GITHUB_ACTION" >> $GITHUB_STEP_SUMMARY
           cat <<EOF > build.sh
           #!/bin/bash -ex
+          export DEBIAN_FRONTEND=noninteractive
           apt -q update
           apt -q install -y ${DEBIAN_PACKAGES}
           apt -q autoclean
